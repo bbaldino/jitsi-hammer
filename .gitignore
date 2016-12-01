@@ -1,0 +1,8 @@
+/bin/
+/doc/
+/classes/
+/MANIFEST.MF
+/jitsi-hammer.jar
+.idea/
+*.iml
+target/
