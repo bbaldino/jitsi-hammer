@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-# README #
 
-This README is to describe how to build the hammer
-=======
 # Jitsi-Hammer
 
 A traffic generator for Jitsi Videobridge.
@@ -120,4 +116,3 @@ The stats will be saved in JSON in a directory depending of your system :
 You can adjust the logging configuration of the JVM with the file ./lib/logging.properties .  
 
 For now it is set to only display at a WARNING level, but you can set "org.jitsi.hammer.level" to INFO if you want to print the INFO log of Jitsi-Hammer (but not libjitsi).
->>>>>>> 32f32f1a1b1992923d3bd83848f6af5838c3890d
