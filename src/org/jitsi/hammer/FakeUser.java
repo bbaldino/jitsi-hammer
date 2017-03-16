@@ -716,7 +716,7 @@ public class FakeUser implements PacketListener
             //Set the remote fingerprint on my streams and add the fingerprints
             //of my streams to the content list of the session-accept
             HammerUtils.setDtlsEncryptionOnTransport(
-                mediaStreamMap,
+                dtlsControl,
                 sessionAccept.getContentList(),
                 sessionInitiate.getContentList());
 

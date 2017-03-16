@@ -521,7 +521,7 @@ public class HammerUtils
             {
                 fingerprints = transport.getChildExtensionsOfType(
                     DtlsFingerprintPacketExtension.class);
-                logger.info("BB: got fingerprints: " + fingerprints);
+                logger.info("BB: got " + fingerprints.size() + " fingerprints: ");
 
                 if (!fingerprints.isEmpty())
                 {
@@ -532,15 +532,18 @@ public class HammerUtils
                     //fingerprint, so I'm not sure using a loop here is useful
                     for(DtlsFingerprintPacketExtension fingerprint : fingerprints)
                     {
+                        logger.info("BB: Setting remote fingerprint " + fingerprint.getHash() + ", " + fingerprint.getFingerprint());
                         remoteFingerprints.put(
                             fingerprint.getHash(),
                             fingerprint.getFingerprint());
 
                         //get the setup attribute of the fingerprint
                         //(the first setup found will be taken)
+                        logger.info("BB: Got dtls setup: " + (dtlsSetup == null ? "null" : dtlsSetup));
                         if(dtlsSetup == null)
                         {
                             String setup = fingerprint.getAttributeAsString("setup");
+                            logger.info("BB: parsed setup " + (setup == null ? "null" : setup));
                             if(setup != null)
                             {
                                 dtlsSetup = DtlsControl.Setup.parseSetup(setup);
@@ -577,6 +580,7 @@ public class HammerUtils
                     new DtlsFingerprintPacketExtension();
 
                 fingerprint.setHash(dtlsControl.getLocalFingerprintHashFunction());
+                logger.info("BB: Setting local fingerprint to " + dtlsControl.getLocalFingerprint());
                 fingerprint.setFingerprint(dtlsControl.getLocalFingerprint());
                 fingerprint.setAttribute("setup", dtlsSetup);
 
