@@ -206,7 +206,6 @@ public class HammerUtils
                     }
                 }
             }
-            break; // only do this once since we're bundling
         }
     }
 
@@ -467,7 +466,11 @@ public class HammerUtils
                 }
 
             }
+            logger.info("BB: Adding connector of type" + connector.getClass().getName() + " to stream " +
+                ms.getFormat().getMediaType());
             ms.setConnector(connector);
+            logger.info("BB: Adding target of address " + pair.getRemoteCandidate().getTransportAddress() +
+                    " to stream " + ms.getFormat().getMediaType());
             ms.setTarget(new MediaStreamTarget(
                     pair.getRemoteCandidate().getTransportAddress(),
                     pair.getRemoteCandidate().getTransportAddress()
