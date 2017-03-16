@@ -35,6 +35,7 @@ import java.io.*;
  */
 public class IceMediaStreamGenerator
 {
+    public static String STREAM_NAME = "muxed_stream";
     /**
      * The static instance of the IceMediaStreamGenerator.
      */
@@ -139,8 +140,24 @@ public class IceMediaStreamGenerator
                         new TurnCandidateHarvester(turnAddress) );
             }
         }
+        // Instead of creating one component and stream per mline, create one
+        //  for everything
+        synchronized (this)
+        {
+            stream = agent.createMediaStream(IceMediaStreamGenerator.STREAM_NAME);
+            if( (CURRENT_COMPONENT_PORT + 1) >= MAX_COMPONENT_PORT )
+            {
+                CURRENT_COMPONENT_PORT = MIN_COMPONENT_PORT;
+            }
+            agent.createComponent(
+                    stream,
+                    Transport.UDP,
+                    CURRENT_COMPONENT_PORT,
+                    CURRENT_COMPONENT_PORT,
+                    CURRENT_COMPONENT_PORT + 50);
+        }
 
-
+        /*
         synchronized(this)
         {
             for(String name : mediaNameSet)
@@ -172,6 +189,7 @@ public class IceMediaStreamGenerator
                 CURRENT_COMPONENT_PORT+=50;
             }
         }
+        */
     }
 
 }

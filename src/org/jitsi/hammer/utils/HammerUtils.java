@@ -128,26 +128,32 @@ public class HammerUtils
     {
         IceUdpTransportPacketExtension transports = null;
         List<CandidatePacketExtension> candidates = null;
-        String contentName = null;
         IceMediaStream stream = null;
         Component component = null;
 
         RemoteCandidate relatedCandidate = null;
         TransportAddress mainAddr = null, relatedAddr = null;
         RemoteCandidate remoteCandidate;
+        boolean setStreamInformation = false;
 
         for(ContentPacketExtension content : contentList)
         {
-            contentName = content.getName();
-            stream = agent.getStream(contentName);
-            if(stream == null) continue;
-
             transports = content.getFirstChildOfType(IceUdpTransportPacketExtension.class);
             if(transports == null)
+            {
                 continue;
-
-            stream.setRemotePassword(transports.getPassword());
-            stream.setRemoteUfrag(transports.getUfrag());
+            }
+            if (!setStreamInformation)
+            {
+                stream = agent.getStream(IceMediaStreamGenerator.STREAM_NAME);
+                if(stream == null)
+                {
+                    logger.info("BB: Unable to find ice stream");
+                }
+                stream.setRemotePassword(transports.getPassword());
+                stream.setRemoteUfrag(transports.getUfrag());
+                setStreamInformation = true;
+            }
 
             candidates = transports.getChildExtensionsOfType(CandidatePacketExtension.class);
             Collections.sort(candidates);
@@ -209,7 +215,7 @@ public class HammerUtils
         Agent agent,
         Collection<ContentPacketExtension> contentList)
     {
-        IceMediaStream iceMediaStream = null;
+        IceMediaStream iceMediaStream = agent.getStream(IceMediaStreamGenerator.STREAM_NAME);
         IceUdpTransportPacketExtension transport = null;
         DtlsFingerprintPacketExtension fingerprint = null;
         CandidatePacketExtension candidate = null;
@@ -218,8 +224,6 @@ public class HammerUtils
         for(ContentPacketExtension content : contentList)
         {
             transport = new IceUdpTransportPacketExtension();
-
-            iceMediaStream = agent.getStream(content.getName());
 
             transport.setPassword( agent.getLocalPassword() );
             transport.setUfrag( agent.getLocalUfrag() );
@@ -410,60 +414,35 @@ public class HammerUtils
         Map<String,MediaStream> mediaStreamMap,
         boolean dropIncomingRtpPackets)
     {
-        IceMediaStream iceMediaStream = null;
-        CandidatePair rtpPair = null;
-        CandidatePair rtcpPair = null;
-        DatagramSocket rtpSocket = null;
-        DatagramSocket rtcpSocket = null;
-
+        IceMediaStream iceMediaStream = agent.getStream(IceMediaStreamGenerator.STREAM_NAME);
+        CandidatePair pair = null;
         StreamConnector connector = null;
-        MediaStream stream = null;
 
-        String str = "Transport candidates selected for RTP:\n";
-        for(String mediaName : agent.getStreamNames())
+        pair = iceMediaStream.getComponent(Component.RTP).getSelectedPair();
+        MediaStream firstStream = mediaStreamMap.values().iterator().next();
+        DatagramSocket datagramSocket = pair.getIceSocketWrapper().getUDPSocket();
+
+        try
         {
-            iceMediaStream = agent.getStream(mediaName);
-            stream = mediaStreamMap.get(mediaName);
-
-            rtpPair = iceMediaStream.getComponent(Component.RTP)
-                .getSelectedPair();
-            rtcpPair = iceMediaStream.getComponent(Component.RTCP)
-                .getSelectedPair();
-
-            str = str + "-" + mediaName + " stream :\n" + rtpPair + "\n";
-
-            rtpSocket = rtpPair.getIceSocketWrapper().getUDPSocket();
-
-            if (dropIncomingRtpPackets &&
-                    rtpSocket instanceof MultiplexingDatagramSocket)
+            if (datagramSocket instanceof MultiplexingDatagramSocket)
             {
-                try
-                {
-                    // We are not going to handle any incoming RTP packets
-                    // anyway, so we might as well drop them early and not
-                    // waste resources processing them further.
-                    // This sets up a filtered socket, which receives only
-                    // DTLS packets.
-                    rtpSocket
-                        = ((MultiplexingDatagramSocket) rtpSocket)
-                            .getSocket(new DTLSDatagramFilter());
-                }
-                catch (SocketException se)
-                {
-                    // Whatever, this is just an optimization, anyway.
-                }
+                logger.info("BB: Adding dtls filter to mediastream");
+                MultiplexingDatagramSocket multiplexingDatagramSocket =
+                        (MultiplexingDatagramSocket) datagramSocket;
+                connector = new DefaultStreamConnector(
+                        multiplexingDatagramSocket.getSocket(new DTLSDatagramFilter()),
+                        null,
+                        true);
             }
-            rtcpSocket = rtcpPair.getIceSocketWrapper().getUDPSocket();
+        } catch (SocketException e)
+        {
 
-            connector = new DefaultStreamConnector(rtpSocket, rtcpSocket);
-            stream.setConnector(connector);
-
-            stream.setTarget(
-                new MediaStreamTarget(
-                    rtpPair.getRemoteCandidate().getTransportAddress(),
-                    rtcpPair.getRemoteCandidate().getTransportAddress()) );
         }
-        logger.info(str);
+        firstStream.setConnector(connector);
+        firstStream.setTarget(new MediaStreamTarget(
+                pair.getRemoteCandidate().getTransportAddress(),
+                pair.getRemoteCandidate().getTransportAddress()
+        ));
     }
 
 
