@@ -51,6 +51,15 @@ public class HammerUtils
     private static final Logger logger
         = Logger.getLogger(HammerUtils.class);
 
+    private static DatagramPacketFilter filterAll = new DatagramPacketFilter()
+    {
+        @Override
+        public boolean accept(DatagramPacket datagramPacket)
+        {
+            return false;
+        }
+    };
+
     /**
      * Select the favorite <tt>MediaFormat</tt> of a list of <tt>MediaFormat</tt>
      *
@@ -197,6 +206,7 @@ public class HammerUtils
                     }
                 }
             }
+            break; // only do this once since we're bundling
         }
     }
 
@@ -419,30 +429,46 @@ public class HammerUtils
         StreamConnector connector = null;
 
         pair = iceMediaStream.getComponent(Component.RTP).getSelectedPair();
-        MediaStream firstStream = mediaStreamMap.values().iterator().next();
         DatagramSocket datagramSocket = pair.getIceSocketWrapper().getUDPSocket();
 
-        try
+        boolean first = true;
+        for (MediaStream ms : mediaStreamMap.values())
         {
             if (datagramSocket instanceof MultiplexingDatagramSocket)
             {
                 logger.info("BB: Adding dtls filter to mediastream");
                 MultiplexingDatagramSocket multiplexingDatagramSocket =
                         (MultiplexingDatagramSocket) datagramSocket;
-                connector = new DefaultStreamConnector(
-                        multiplexingDatagramSocket.getSocket(new DTLSDatagramFilter()),
-                        null,
-                        true);
-            }
-        } catch (SocketException e)
-        {
+                try
+                {
+                    if (first)
+                    {
+                        connector = new DefaultStreamConnector(
+                                multiplexingDatagramSocket.getSocket(new DTLSDatagramFilter()),
+                                null,
+                                true);
+                        first = false;
+                    }
+                    else
+                    {
+                        connector = new DefaultStreamConnector(
+                                multiplexingDatagramSocket.getSocket(filterAll),
+                                null,
+                                true);
+                    }
+                }
+                catch (SocketException e)
+                {
 
+                }
+
+            }
+            ms.setConnector(connector);
+            ms.setTarget(new MediaStreamTarget(
+                    pair.getRemoteCandidate().getTransportAddress(),
+                    pair.getRemoteCandidate().getTransportAddress()
+            ));
         }
-        firstStream.setConnector(connector);
-        firstStream.setTarget(new MediaStreamTarget(
-                pair.getRemoteCandidate().getTransportAddress(),
-                pair.getRemoteCandidate().getTransportAddress()
-        ));
     }
 
 
