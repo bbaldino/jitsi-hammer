@@ -358,6 +358,8 @@ public class HammerUtils
             stream = mediaStreamMap.get(mediaName);
 
             device = mediaDeviceChooser.getMediaDevice(format.getMediaType());
+            logger.info("BB: Setting device for media type " +
+                    format.getMediaType() + ", null? " + (device == null));
             if(device != null)
                 stream.setDevice(device);
 
@@ -430,7 +432,7 @@ public class HammerUtils
 
         pair = iceMediaStream.getComponent(Component.RTP).getSelectedPair();
         DatagramSocket datagramSocket = pair.getIceSocketWrapper().getUDPSocket();
-	logger.info("BB: datagramsocket is actually: " + datagramSocket.getClass().getName());
+        logger.info("BB: datagramsocket is actually: " + datagramSocket.getClass().getName());
 
         boolean first = true;
         for (MediaStream ms : mediaStreamMap.values())
@@ -560,8 +562,8 @@ public class HammerUtils
                     dtlsSetup = getDtlsSetupForAnswer(dtlsSetup);
                     dtlsControl.setSetup(dtlsSetup);
                 }
+                break; // we're bundling
             }
-            break; // we're bundling
         }
 
 
@@ -588,8 +590,9 @@ public class HammerUtils
                 fingerprint.setAttribute("setup", dtlsSetup);
 
                 transport.addChildExtension(fingerprint);
+
+                break; //bundling
             }
-            break; //bundling
         }
     }
 

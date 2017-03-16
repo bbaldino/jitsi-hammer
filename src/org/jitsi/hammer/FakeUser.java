@@ -819,6 +819,7 @@ public class FakeUser implements PacketListener
         for(String key : contentMap.keySet())
         {
             MediaStream stream = mediaStreamMap.get(key);
+            logger.info("BB: Starting media stream " + stream.getFormat().getMediaType());
             stream.start();
         }
     }
