@@ -15,6 +15,7 @@
  */
 package org.jitsi.hammer;
 
+import org.jitsi.impl.neomedia.transform.dtls.DtlsControlImpl;
 import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.bosh.*;
 import org.jivesoftware.smack.packet.*;
@@ -142,6 +143,8 @@ public class FakeUser implements PacketListener
      */
     private FakeUserStats fakeUserStats;
 
+    private final DtlsControl dtlsControl = new DtlsControlImpl();
+
     /**
      * Construct the conference focus JID 
      * (or get one from the server info if provided)
@@ -246,7 +249,7 @@ public class FakeUser implements PacketListener
          * Creation in advance of the MediaStream that will be used later
          * so the HammerStats can register their MediaStreamStats now.
          */
-        mediaStreamMap = HammerUtils.createMediaStreams();
+        mediaStreamMap = HammerUtils.createMediaStreams(dtlsControl);
         if (fakeUserStats != null)
         {
             fakeUserStats.setMediaStreamStats(

@@ -285,7 +285,7 @@ public class HammerUtils
      * @return a Map of newly created <tt>MediaStream</tt>, indexed by
      * the String equivalent of their <tt>MediaType</tt>*
      */
-    public static Map<String,MediaStream> createMediaStreams()
+    public static Map<String,MediaStream> createMediaStreams(DtlsControl dtlsControl)
     {
         MediaService mediaService = LibJitsi.getMediaService();
         Map<String,MediaStream> mediaStreamMap = new HashMap<String,MediaStream>();
@@ -297,7 +297,7 @@ public class HammerUtils
         stream = mediaService.createMediaStream(
             null,
             MediaType.AUDIO,
-            mediaService.createSrtpControl(SrtpControlType.DTLS_SRTP));
+            dtlsControl);
         mediaStreamMap.put(MediaType.AUDIO.toString(), stream);
 
         /*
@@ -306,7 +306,7 @@ public class HammerUtils
         stream = mediaService.createMediaStream(
             null,
             MediaType.VIDEO,
-            mediaService.createSrtpControl(SrtpControlType.DTLS_SRTP));
+            dtlsControl);
         mediaStreamMap.put(MediaType.VIDEO.toString(), stream);
 
         return mediaStreamMap;
@@ -487,25 +487,23 @@ public class HammerUtils
      * Add the local fingerprint & hash function from the <tt>DtlsControl</tt> of
      * the <tt>MediaStream</tt> to the <tt>localContentList</tt>.
      *
-     * @param mediaStreamMap a Map containing the <tt>MediaStream</tt> to
-     * which will be added the remote fingerprints, from which we will get
-     * the local fingerprints.
+     * @param dtlsControl the dtls control to use
      * @param localContentList The list of <tt>ContentPacketExtension</tt> to
      * which will be added the local fingerprints
      * @param remoteContentList The list of <tt>ContentPacketExtension</tt> from
      * which we will get the remote fingerprints
      */
     public static void setDtlsEncryptionOnTransport(
-        Map<String,MediaStream> mediaStreamMap,
+        DtlsControl dtlsControl,
         List<ContentPacketExtension> localContentList,
         List<ContentPacketExtension> remoteContentList)
     {
         logger.info("BB: Setting dtls on transport");
-        MediaStream stream = null;
+        //MediaStream stream = null;
         IceUdpTransportPacketExtension transport = null;
         List<DtlsFingerprintPacketExtension> fingerprints = null;
-        SrtpControl srtpControl = null;
-        DtlsControl dtlsControl = null;
+        //SrtpControl srtpControl = null;
+        //DtlsControl dtlsControl = null;
         DtlsControl.Setup dtlsSetup = null;
 
 
@@ -514,18 +512,13 @@ public class HammerUtils
             transport = remoteContent.getFirstChildOfType(IceUdpTransportPacketExtension.class);
             dtlsSetup = null;
 
-            stream = mediaStreamMap.get(remoteContent.getName());
-            if(stream == null) continue;
-            srtpControl = stream.getSrtpControl();
-            if(srtpControl == null) continue;
+            //stream = mediaStreamMap.get(remoteContent.getName());
+            //if(stream == null) continue;
+            //srtpControl = stream.getSrtpControl();
+            //if(srtpControl == null) continue;
 
-
-            logger.info("BB: Looking at srtpControl for stream " + stream.getFormat().getMediaType() +
-                    ": " + srtpControl.hashCode() + " which is of type " + srtpControl.getClass().getName());
-            if( (srtpControl instanceof DtlsControl) && (transport != null) )
+            if (transport != null)
             {
-                dtlsControl = (DtlsControl)srtpControl;
-
                 fingerprints = transport.getChildExtensionsOfType(
                     DtlsFingerprintPacketExtension.class);
                 logger.info("BB: got fingerprints: " + fingerprints);
@@ -568,7 +561,6 @@ public class HammerUtils
                     dtlsSetup = getDtlsSetupForAnswer(dtlsSetup);
                     dtlsControl.setSetup(dtlsSetup);
                 }
-                break; // we're bundling
             }
         }
 
@@ -579,24 +571,16 @@ public class HammerUtils
         {
             transport = localContent.getFirstChildOfType(
                 IceUdpTransportPacketExtension.class);
-
-            stream = mediaStreamMap.get(localContent.getName());
-            if(stream == null) continue;
-            srtpControl = stream.getSrtpControl();
-
-            if( (srtpControl instanceof DtlsControl) && (transport != null))
+            if (transport != null)
             {
                 DtlsFingerprintPacketExtension fingerprint =
                     new DtlsFingerprintPacketExtension();
-                dtlsControl = (DtlsControl) srtpControl;
-
 
                 fingerprint.setHash(dtlsControl.getLocalFingerprintHashFunction());
                 fingerprint.setFingerprint(dtlsControl.getLocalFingerprint());
                 fingerprint.setAttribute("setup", dtlsSetup);
 
                 transport.addChildExtension(fingerprint);
-
                 break; //bundling
             }
         }
