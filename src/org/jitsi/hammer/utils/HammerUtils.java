@@ -500,7 +500,7 @@ public class HammerUtils
         List<ContentPacketExtension> localContentList,
         List<ContentPacketExtension> remoteContentList)
     {
-	logger.info("BB: Setting dtls on transport");
+        logger.info("BB: Setting dtls on transport");
         MediaStream stream = null;
         IceUdpTransportPacketExtension transport = null;
         List<DtlsFingerprintPacketExtension> fingerprints = null;
@@ -520,12 +520,15 @@ public class HammerUtils
             if(srtpControl == null) continue;
 
 
+            logger.info("BB: Looking at srtpControl for stream " + stream.getFormat().getMediaType() +
+                    ": " + srtpControl.hashCode() + " which is of type " + srtpControl.getClass().getName());
             if( (srtpControl instanceof DtlsControl) && (transport != null) )
             {
                 dtlsControl = (DtlsControl)srtpControl;
 
                 fingerprints = transport.getChildExtensionsOfType(
                     DtlsFingerprintPacketExtension.class);
+                logger.info("BB: got fingerprints: " + fingerprints);
 
                 if (!fingerprints.isEmpty())
                 {
