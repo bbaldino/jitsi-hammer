@@ -430,19 +430,20 @@ public class HammerUtils
 
         pair = iceMediaStream.getComponent(Component.RTP).getSelectedPair();
         DatagramSocket datagramSocket = pair.getIceSocketWrapper().getUDPSocket();
+	logger.info("BB: datagramsocket is actually: " + datagramSocket.getClass().getName());
 
         boolean first = true;
         for (MediaStream ms : mediaStreamMap.values())
         {
             if (datagramSocket instanceof MultiplexingDatagramSocket)
             {
-                logger.info("BB: Adding dtls filter to mediastream");
                 MultiplexingDatagramSocket multiplexingDatagramSocket =
                         (MultiplexingDatagramSocket) datagramSocket;
                 try
                 {
                     if (first)
                     {
+                        logger.info("BB: Adding dtls filter to mediastream");
                         connector = new DefaultStreamConnector(
                                 multiplexingDatagramSocket.getSocket(new DTLSDatagramFilter()),
                                 null,
@@ -451,6 +452,7 @@ public class HammerUtils
                     }
                     else
                     {
+                        logger.info("BB: Adding drop-all filter to mediastream");
                         connector = new DefaultStreamConnector(
                                 multiplexingDatagramSocket.getSocket(filterAll),
                                 null,
@@ -493,6 +495,7 @@ public class HammerUtils
         List<ContentPacketExtension> localContentList,
         List<ContentPacketExtension> remoteContentList)
     {
+	logger.info("BB: Setting dtls on transport");
         MediaStream stream = null;
         IceUdpTransportPacketExtension transport = null;
         List<DtlsFingerprintPacketExtension> fingerprints = null;
@@ -558,6 +561,7 @@ public class HammerUtils
                     dtlsControl.setSetup(dtlsSetup);
                 }
             }
+            break; // we're bundling
         }
 
 
@@ -585,6 +589,7 @@ public class HammerUtils
 
                 transport.addChildExtension(fingerprint);
             }
+            break; //bundling
         }
     }
 
